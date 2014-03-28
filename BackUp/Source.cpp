@@ -49,7 +49,7 @@ int main(int argc, TCHAR ** argv)
 		{
 			srcc = 1;
 			srcv = new TCHAR*[1];
-			srcv[0]= new TCHAR[_tcslen(argv[2]+1)];
+			srcv[0]= new TCHAR[_tcslen(argv[2])+1];
 			_tcscpy(srcv[0],argv[2]);
 		}
 		else 
@@ -131,8 +131,8 @@ int main(int argc, TCHAR ** argv)
 		delete [] extv[i];
 	delete[] extv;
 	for (int i=0;i< srcc;++i)
-		delete []srcv[i];
-	delete[] srcv;
+		delete [] srcv[i];
+	delete [] srcv;
 	delete [] dest;
 
 	return 0;
