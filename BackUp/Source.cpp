@@ -18,13 +18,18 @@ int main(int argc, TCHAR ** argv)
 	TCHAR ** srcv;	//	values of sources
 	TCHAR * dest;	//	destination
 
+	dest = new TCHAR[_tcslen(argv[1])+1];
+	_tcscpy(dest,argv[1]);
+
 	//	search extension
 	{
 		if (4>argc||!_tcscmp(argv[3],_T("*")))
 		{
 			extc = 1;
 			extv = new TCHAR*[1];
-			extv[0] = _T("*");
+			extv[0] = new TCHAR[2];
+			extv[0][0] = _T('*');
+			extv[0][1]=0;
 		}
 		else 
 		{
@@ -54,14 +59,14 @@ int main(int argc, TCHAR ** argv)
 			int count = GetLogicalDriveStrings(len,buf);
 			srcc =0 ;
 			for (int i=0;i<count;i+=4)
-				if(GetDriveType(buf+i)&(DRIVE_FIXED|DRIVE_REMOVABLE))
+				if(GetDriveType(buf+i)==DRIVE_FIXED||GetDriveType(buf+i)==DRIVE_REMOVABLE)
 					++srcc;
 			srcv = new TCHAR*[srcc];
 			int j=0;
 			if (3>argc||!_tcscmp(argv[2],_T("*")))
 			{
 				for (int i=0;i<count;i+=4)
-					if(GetDriveType(buf+i)&(DRIVE_FIXED|DRIVE_REMOVABLE))
+					if(GetDriveType(buf+i)==DRIVE_FIXED||GetDriveType(buf+i)==DRIVE_REMOVABLE)
 					{
 						srcv[j] = new TCHAR[4];
 						_tcscpy(srcv[j],(buf+i));
@@ -71,7 +76,7 @@ int main(int argc, TCHAR ** argv)
 			else
 			{
 				for (int i=0;i<count;i+=4)
-					if(GetDriveType(buf+i)&(DRIVE_FIXED|DRIVE_REMOVABLE))
+					if(GetDriveType(buf+i)==DRIVE_FIXED||GetDriveType(buf+i)==DRIVE_REMOVABLE)
 					{
 						srcv[j] = new TCHAR[_tcslen(argv[2])+1];
 						_tcscpy(srcv[j],argv[2]);
