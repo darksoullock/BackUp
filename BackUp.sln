@@ -1,0 +1,20 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2012
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "BackUp", "BackUp\BackUp.vcxproj", "{1E504079-46E1-4CB0-BC5F-85D2C3BC4ECB}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{1E504079-46E1-4CB0-BC5F-85D2C3BC4ECB}.Debug|Win32.ActiveCfg = Debug|Win32
+		{1E504079-46E1-4CB0-BC5F-85D2C3BC4ECB}.Debug|Win32.Build.0 = Debug|Win32
+		{1E504079-46E1-4CB0-BC5F-85D2C3BC4ECB}.Release|Win32.ActiveCfg = Release|Win32
+		{1E504079-46E1-4CB0-BC5F-85D2C3BC4ECB}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
