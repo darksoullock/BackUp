@@ -35,7 +35,7 @@ int main(int argc, TCHAR ** argv)
 		{
 			extc = argc-3;
 			extv = new TCHAR*[extc];
-			for (int i=0;i<argc-3;++i)
+			for (int i=0;i<extc;++i)
 			{
 				extv[i]= new TCHAR[_tcslen(argv[i+3])+1];
 				extv[i]= _tcscpy(extv[i],argv[i+3]);
@@ -44,11 +44,12 @@ int main(int argc, TCHAR ** argv)
 	}
 
 	//	search sources
+			// TODO: add slashes at the ends of paths
 	{
 		if (3<=argc&&_tcscmp(argv[2],"*")&&argv[2][0]!='*')
 		{
 			srcc = 1;
-			srcv = new TCHAR*[1];
+			srcv = new TCHAR*[srcc];
 			srcv[0]= new TCHAR[_tcslen(argv[2])+1];
 			_tcscpy(srcv[0],argv[2]);
 		}
@@ -111,7 +112,8 @@ int main(int argc, TCHAR ** argv)
 	cout <<"list of used devices:\n";
 	for (int i=0;i<srcc;++i)
 	{
-		srcv[i][3]=0;
+
+		srcv[i][3]=0;	//!!!!!
 		cout << srcv[i] << endl;
 	}
 	cout << "\n";
@@ -129,7 +131,7 @@ int main(int argc, TCHAR ** argv)
 	//memfree
 	for (int i=0;i< extc;++i)
 		delete [] extv[i];
-	delete[] extv;
+	delete [] extv;
 	for (int i=0;i< srcc;++i)
 		delete [] srcv[i];
 	delete [] srcv;
