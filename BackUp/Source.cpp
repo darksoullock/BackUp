@@ -1,16 +1,47 @@
 #include <iostream>
+#include <fstream>
 #include <windows.h>
 #include <tchar.h>
 #include <ctime>
+#include <list>
+#include "filelist.h"
 using namespace std;
+
+TCHAR dir[MAX_PATH];
+
+struct fl
+{
+	TCHAR * filename;
+	TCHAR * path;
+	int extc;		//	count of extensions
+	TCHAR ** extv;	//	values of extensions
+};
+
+void saveFileList(fl arg)
+{
+	list<char*> *a = new list<char*>();
+	GetFileList(arg.path,arg.extc,arg.extv,a);
+    list<char*>::iterator it;
+	TCHAR outname[MAX_PATH];
+	strcpy(outname, dir);
+	strcat(outname, "\\");
+	strcat(outname, arg.filename);
+	ofstream out(outname);
+    for (it = a->begin(); it!=a->end(); ++it)
+        out << *it << endl;
+}
+
+
 
 int main(int argc, TCHAR ** argv)
 {
+	GetCurrentDirectory(MAX_PATH, dir);
+	cout << dir << endl;
 	if (argc ==1)
 	{
 		cout << _T("usage: backup.exe backup_folder [folder [types]]\n");
 		return 0;
-	} 
+	}
 
 	int extc;		//	count of extensions
 	TCHAR ** extv;	//	values of extensions
@@ -50,7 +81,7 @@ int main(int argc, TCHAR ** argv)
 		{
 			srcc = 1;
 			srcv = new TCHAR*[srcc];
-			srcv[0]= new TCHAR[_tcslen(argv[2])+1];
+			srcv[0]= new TCHAR[_tcslen(argv[2])+1+1];
 			_tcscpy(srcv[0],argv[2]);
 		}
 		else 
@@ -121,6 +152,14 @@ int main(int argc, TCHAR ** argv)
 	cout <<"list of file extensions:\n";
 	for (int i=0;i<extc;++i)
 		cout << extv[i] << endl;
+
+
+	list<char*> *a = new list<char*>();
+	GetFileList("F:\\",extc,extv,a);
+    list<char*>::iterator it;
+    for (it = a->begin(); it!=a->end(); ++it)
+        cout << *it << endl;
+
 
 	/*DWORD dwAttrs;
 	dwAttrs = GetFileAttributes(argv[1]);
