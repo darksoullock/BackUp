@@ -11,24 +11,30 @@ TCHAR dir[MAX_PATH];
 
 struct fl
 {
-	TCHAR * filename;
+	TCHAR filename[MAX_PATH];
 	TCHAR * path;
 	int extc;		//	count of extensions
 	TCHAR ** extv;	//	values of extensions
 };
 
-void saveFileList(fl arg)
+DWORD WINAPI saveFileList(PVOID arg2)
 {
+	auto arg = (fl*)arg2;
 	list<char*> *a = new list<char*>();
-	GetFileList(arg.path,arg.extc,arg.extv,a);
-    list<char*>::iterator it;
+	GetFileList(arg->path,arg->extc,arg->extv,a);
+	list<char*>::iterator it;
 	TCHAR outname[MAX_PATH];
 	strcpy(outname, dir);
 	strcat(outname, "\\");
-	strcat(outname, arg.filename);
+	strcat(outname, arg->filename);
+	strcat(outname, ".txt");
 	ofstream out(outname);
-    for (it = a->begin(); it!=a->end(); ++it)
-        out << *it << endl;
+	for (it = a->begin(); it!=a->end(); ++it)
+		out << *it << endl;
+	out.flush();
+	out.close();
+	delete a;
+	return 0;
 }
 
 
@@ -36,7 +42,7 @@ void saveFileList(fl arg)
 int main(int argc, TCHAR ** argv)
 {
 	GetCurrentDirectory(MAX_PATH, dir);
-	cout << dir << endl;
+	//cout << dir << endl;
 	if (argc ==1)
 	{
 		cout << _T("usage: backup.exe backup_folder [folder [types]]\n");
@@ -75,7 +81,7 @@ int main(int argc, TCHAR ** argv)
 	}
 
 	//	search sources
-			// TODO: add slashes at the ends of paths
+	// TODO: add slashes at the ends of paths
 	{
 		if (3<=argc&&_tcscmp(argv[2],"*")&&argv[2][0]!='*')
 		{
@@ -131,12 +137,12 @@ int main(int argc, TCHAR ** argv)
 		strcpy(datetime,datetime2);
 #endif
 	}
-
+	/*
 	cout << _T("names of archives:") << endl;
 	for(int i=0;i<srcc;++i)
 	{
-		datetime[0] = srcv[i][0];
-		cout << datetime << endl;
+	datetime[0] = srcv[i][0];
+	cout << datetime << endl;
 	}
 	cout <<"\n";
 
@@ -144,28 +150,30 @@ int main(int argc, TCHAR ** argv)
 	for (int i=0;i<srcc;++i)
 	{
 
-		srcv[i][3]=0;	//!!!!!
-		cout << srcv[i] << endl;
+	srcv[i][3]=0;	//!!!!!
+	cout << srcv[i] << endl;
 	}
 	cout << "\n";
 
 	cout <<"list of file extensions:\n";
 	for (int i=0;i<extc;++i)
-		cout << extv[i] << endl;
+	cout << extv[i] << endl;*/
 
-
-	list<char*> *a = new list<char*>();
-	GetFileList("F:\\",extc,extv,a);
-    list<char*>::iterator it;
-    for (it = a->begin(); it!=a->end(); ++it)
-        cout << *it << endl;
-
-
-	/*DWORD dwAttrs;
-	dwAttrs = GetFileAttributes(argv[1]);
-	bool b = false;
-	if (dwAttrs==-1)
-	b=CreateDirectory(argv[1],0);*/
+	HANDLE *h = new HANDLE[srcc];
+	for (int i=0;i< srcc;++i)
+	{
+		fl *a = new fl();
+		_tcscpy(a->filename, datetime);
+		a->filename[0] = srcv[i][0];
+		a->path = srcv[i];
+		a->extv = extv;
+		a->extc = extc;
+		h[i] = CreateThread(0,0,saveFileList,a,0,0);
+	}
+	WaitForMultipleObjects(srcc,h,TRUE,INFINITE);
+	for (int i=0;i< srcc;++i)
+		CloseHandle(h[i]);
+	delete [] h;
 
 	//memfree
 	for (int i=0;i< extc;++i)

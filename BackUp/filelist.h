@@ -2,8 +2,10 @@
 #include <windows.h>
 #include <list>
 using namespace std;
-void GetFileList(const char * cpath, int extc, TCHAR ** extv, list<char*> * r)
+void __stdcall GetFileList(const char * cpath, int extc, TCHAR ** extv, list<char*> * r)
 {
+	HANDLE mut = CreateMutex(0,FALSE,"asd");
+	WaitForSingleObject(mut,INFINITE);
 	if (GetFileAttributes(cpath)==-1)
 		return;
 	char path[MAX_PATH];
@@ -44,22 +46,18 @@ void GetFileList(const char * cpath, int extc, TCHAR ** extv, list<char*> * r)
 					{
 						int l = _tcslen(fd.cFileName);
 						int el;
-						bool b = true;		//extension match ? 1 : 0
+						bool b = false;		//extension match ? 1 : 0
 						for (int i=0;i< extc;++i)	
 						{
 							el = _tcslen(extv[i]);
 							if (l<el)	//if filename shorter than ext.
-							{
-								b=false;
 								continue;
-							}
 							for (int j=el-1;j>=0;--j)	//compare extension
 								if (fd.cFileName[l+j-el]!=extv[i][j])
-								{
-									b = false;
-									break;
-								}
-
+									goto extfail;
+							b = true;
+extfail:
+							;
 						}
 						if (b)	//if ok add to list
 						{
@@ -77,6 +75,8 @@ void GetFileList(const char * cpath, int extc, TCHAR ** extv, list<char*> * r)
 			FindClose(h);
 		}
 	}
+	ReleaseMutex(mut);
+	CloseHandle(mut);
 }
 /*int main()
 {
