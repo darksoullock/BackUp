@@ -23,11 +23,11 @@ DWORD WINAPI saveFileList(PVOID arg2)
 	list<char*> *a = new list<char*>();
 	GetFileList(arg->path,arg->extc,arg->extv,a);
 	list<char*>::iterator it;
-	TCHAR outname[MAX_PATH];
-	strcpy(outname, dir);
-	strcat(outname, "\\");
-	strcat(outname, arg->filename);
-	strcat(outname, ".txt");
+	TCHAR outname[MY_MAX_PATH];
+	strcpy_s<sizeof(outname)>(outname, dir);
+	strcat_s<sizeof(outname)>(outname, "\\");
+	strcat_s<sizeof(outname)>(outname, arg->filename);
+	strcat_s<sizeof(outname)>(outname, ".txt");
 	ofstream out(outname);
 	for (it = a->begin(); it!=a->end(); ++it)
 		out << *it << endl;
@@ -41,6 +41,15 @@ DWORD WINAPI saveFileList(PVOID arg2)
 
 int main(int argc, TCHAR ** argv)
 {
+	/*
+	list<char*> *a = new list<char*>();
+	char ** rrr = new char*[1];
+	rrr[0] = "txt";
+	GetFileList("E:\\Program Files (x86)\\Driver Sweeper\\Backup\\13-12-15-20-37-07\\AMD - Display\\Directories\\AMD\\Support\\13-9_win7_win8_32_dd_ccc_whql\\Config\\",1,rrr,a);
+	list<char*>::iterator it;
+	for (it = a->begin(); it!=a->end(); ++it)
+	cout << *it << endl;
+	return 0;*/
 	GetCurrentDirectory(MAX_PATH, dir);
 	//cout << dir << endl;
 	if (argc ==1)
@@ -54,10 +63,11 @@ int main(int argc, TCHAR ** argv)
 	int srcc;		//	count of sources
 	TCHAR ** srcv;	//	values of sources
 	TCHAR * dest;	//	destination
-
-	dest = new TCHAR[_tcslen(argv[1])+1];
-	_tcscpy(dest,argv[1]);
-
+	{
+		auto l = _tcslen(argv[1])+1;
+		dest = new TCHAR[l];
+		_tcscpy_s(dest,l,argv[1]);
+	}
 	//	search extension
 	{
 		if (4>argc||!_tcscmp(argv[3],_T("*")))
