@@ -4,11 +4,11 @@ const int MY_MAX_PATH = 1024;
 #include <windows.h>
 #include <list>
 using namespace std;
-bool strend(char*a, char*b)		//string a not ends with string 
+bool strend(TCHAR *a, TCHAR*b)		//string a not ends with string 
 {
     int l1,l2;
-    l1 = strlen(a);
-    l2 = strlen(b);
+    l1 = _tcslen(a);
+    l2 = _tcslen(b);
 	if (l2>l1)
 		return true;
     for (int i=0;i<l2;++i)
@@ -18,21 +18,21 @@ bool strend(char*a, char*b)		//string a not ends with string
     }
     return false;
 }
-void __stdcall GetFileList(const char * cpath,int extc,char ** extv, list<char*> * r)
+void __stdcall GetFileList(const TCHAR * cpath,int extc,TCHAR ** extv, list<TCHAR*> * r)
 {
     
 
 
 	if (GetFileAttributes(cpath)==-1)
 		return;
-	char path[MY_MAX_PATH];
-	char pattern[MY_MAX_PATH];
+	TCHAR path[MY_MAX_PATH];
+	TCHAR pattern[MY_MAX_PATH];
 	{							//path should ends with '\\'
-		int l = strlen(cpath);
-		strcpy_s<sizeof(path)>(path,cpath);
-		if (path[l-1]!='\\')
+		int l = _tcslen(cpath);
+		_tcscpy_s<sizeof(path)/sizeof(TCHAR)>(path,cpath);
+		if (path[l-1]!=_T('\\'))
 		{
-			path[l]='\\';       //strcat
+			path[l]=_T('\\');       //strcat
 			path[l+1]=0;
 		}
 	}
@@ -42,26 +42,26 @@ void __stdcall GetFileList(const char * cpath,int extc,char ** extv, list<char*>
 
 		WIN32_FIND_DATA fd;
 		BOOL b;
-		strcpy_s<sizeof(pattern)>(pattern,path);
-		strcat_s<sizeof(pattern)>(pattern,"*");
+		_tcscpy_s<sizeof(pattern)/sizeof(TCHAR)>(pattern,path);
+		_tcscat_s<sizeof(pattern)/sizeof(TCHAR)>(pattern,_T("*"));
 		HANDLE h = FindFirstFile(pattern,&fd);
 		if (h!=INVALID_HANDLE_VALUE)
 		{
 			do
 			{
-				char cFileName[MY_MAX_PATH];
-				strcpy_s<sizeof(cFileName)>(cFileName, path);
-				strcat_s<sizeof(cFileName)>(cFileName, fd.cFileName);
+				TCHAR cFileName[MY_MAX_PATH];
+				_tcscpy_s<sizeof(cFileName)/sizeof(TCHAR)>(cFileName, path);
+				_tcscat_s<sizeof(cFileName)/sizeof(TCHAR)>(cFileName, fd.cFileName);
 
 				DWORD attr = GetFileAttributes(cFileName);
 				
 				if ((attr&FILE_ATTRIBUTE_DIRECTORY)&&(!(attr&FILE_ATTRIBUTE_SYSTEM))&&(!(attr&FILE_ATTRIBUTE_HIDDEN)))
 				{
-					if ((strend(cFileName,"..")&&strend(cFileName,".")))		//not current and parent folder
+					if ((strend(cFileName,_T(".."))&&strend(cFileName,_T("."))))		//not current and parent folder
 					{
 
-						char buf[MY_MAX_PATH];
-						strcpy_s<sizeof(buf)>(buf,cFileName);
+						TCHAR buf[MY_MAX_PATH];
+						_tcscpy_s<sizeof(buf)/sizeof(TCHAR)>(buf,cFileName);
 						GetFileList(buf,extc, extv, r);		//recursion
 					}
 				}
@@ -72,7 +72,7 @@ void __stdcall GetFileList(const char * cpath,int extc,char ** extv, list<char*>
 						bool b = false;		//extension match ? 1 : 0
 						for (int i=0;i< extc;++i)
 						{
-							if (!strcmp(extv[i],"*"))
+							if (!_tcscmp(extv[i],_T("*")))
 							{
 								b=true;
 								break;
@@ -81,8 +81,8 @@ void __stdcall GetFileList(const char * cpath,int extc,char ** extv, list<char*>
 						}
 						if (b)	//if ok add to list
 						{
-							char *buf = new char[MY_MAX_PATH];
-							strcpy_s(buf,MY_MAX_PATH,cFileName);
+							TCHAR *buf = new TCHAR[MY_MAX_PATH];
+							_tcscpy_s(buf,MY_MAX_PATH,cFileName);
 							r->push_front(buf);
 						}
 					}

@@ -20,15 +20,16 @@ struct fl
 DWORD WINAPI saveFileList(PVOID arg2)
 {
 	auto arg = (fl*)arg2;
-	list<char*> *a = new list<char*>();
+	list<TCHAR*> *a = new list<TCHAR*>();
 	GetFileList(arg->path,arg->extc,arg->extv,a);
-	list<char*>::iterator it;
+	list<TCHAR*>::iterator it;
 	TCHAR outname[MY_MAX_PATH];
-	strcpy_s<sizeof(outname)>(outname, dir);
-	strcat_s<sizeof(outname)>(outname, "\\");
-	strcat_s<sizeof(outname)>(outname, arg->filename);
-	strcat_s<sizeof(outname)>(outname, ".txt");
-	ofstream out(outname);
+	_tcscpy_s<sizeof(outname)/sizeof(TCHAR)>(outname, dir);
+	_tcscat_s<sizeof(outname)/sizeof(TCHAR)>(outname, _T("\\"));
+	_tcscat_s<sizeof(outname)/sizeof(TCHAR)>(outname, arg->filename);
+	_tcscat_s<sizeof(outname)/sizeof(TCHAR)>(outname, _T(".txt"));
+	int l = _tcslen(outname);
+	wofstream out(outname);
 	for (it = a->begin(); it!=a->end(); ++it)
 		out << *it << endl;
 	out.flush();
@@ -39,7 +40,7 @@ DWORD WINAPI saveFileList(PVOID arg2)
 
 
 
-int main(int argc, TCHAR ** argv)
+int _tmain(int argc, TCHAR ** argv)
 {
 	/*
 	list<char*> *a = new list<char*>();
@@ -93,7 +94,7 @@ int main(int argc, TCHAR ** argv)
 	//	search sources
 	// TODO: add slashes at the ends of paths
 	{
-		if (3<=argc&&_tcscmp(argv[2],"*")&&argv[2][0]!='*')
+		if (3<=argc&&_tcscmp(argv[2],_T("*"))&&argv[2][0]!=_T('*'))
 		{
 			srcc = 1;
 			srcv = new TCHAR*[srcc];
@@ -141,7 +142,7 @@ int main(int argc, TCHAR ** argv)
 		time_t ut = time(0);		//seconds from 1970
 		tm *st = localtime(&ut);	//time struct
 		strftime(datetime2,sizeof(datetime2)," _%y%m%d%H%M%S",st);	//	http://cplusplus.com/reference/ctime/strftime/
-#ifdef __UNICODE
+#ifdef _UNICODE
 		MultiByteToWideChar(CP_ACP,0,datetime2,sizeof(datetime2),datetime,sizeof(datetime)/sizeof(TCHAR));
 #else
 		strcpy(datetime,datetime2);
