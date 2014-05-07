@@ -6,18 +6,23 @@
 #include <list>
 #include "filelist.h"
 using namespace std;
-
+#ifdef _UNICODE
+#define _tcout wcout
+#else
+#define _tcout cout
+#endif
 TCHAR dir[MAX_PATH];
 
 struct fl
 {
+	TCHAR dest[MAX_PATH];
 	TCHAR filename[MAX_PATH];
 	TCHAR * path;
 	int extc;		//	count of extensions
 	TCHAR ** extv;	//	values of extensions
 };
 
-DWORD WINAPI saveFileList(PVOID arg2)
+DWORD WINAPI StartBackup(PVOID arg2)
 {
 	auto arg = (fl*)arg2;
 	list<TCHAR*> *a = new list<TCHAR*>();
@@ -34,6 +39,24 @@ DWORD WINAPI saveFileList(PVOID arg2)
 		out << *it << endl;
 	out.flush();
 	out.close();
+	SetFileAttributes(outname, GetFileAttributes(outname)&(!FILE_ATTRIBUTE_ARCHIVE));
+	//TCHAR cmdLine2[MY_MAX_PATH];
+	//{
+	TCHAR cmdLine[MY_MAX_PATH];
+	_tcscpy_s(cmdLine, MY_MAX_PATH, _T("\"C:\\program files\\7-zip\\7z.exe\" a "));	//_T("\"%programfiles%\\7-zip\\7z.exe\" a "));
+	_tcscat_s(cmdLine,MY_MAX_PATH,arg->dest);										//
+	_tcscat_s(cmdLine,MY_MAX_PATH,arg->filename);
+	_tcscat_s(cmdLine,MY_MAX_PATH,_T(" @\""));
+	_tcscat_s(cmdLine,MY_MAX_PATH,dir);
+	_tcscat_s(cmdLine,MY_MAX_PATH,_T("\\"));
+	_tcscat_s(cmdLine,MY_MAX_PATH,arg->filename);
+	_tcscat_s(cmdLine,MY_MAX_PATH,_T(".txt\""));
+	//ExpandEnvironmentStrings(cmdLine,cmdLine2,MY_MAX_PATH);
+	//}
+	STARTUPINFO si = {sizeof(si)};
+	PROCESS_INFORMATION pi;
+	BOOL b = CreateProcess(NULL, cmdLine,NULL,NULL,FALSE,NULL,NULL,NULL,&si, &pi);
+	WaitForSingleObject(pi.hThread,INFINITE);
 	delete a;
 	return 0;
 }
@@ -42,20 +65,17 @@ DWORD WINAPI saveFileList(PVOID arg2)
 
 int _tmain(int argc, TCHAR ** argv)
 {
-	/*
-	list<char*> *a = new list<char*>();
-	char ** rrr = new char*[1];
-	rrr[0] = "txt";
-	GetFileList("E:\\Program Files (x86)\\Driver Sweeper\\Backup\\13-12-15-20-37-07\\AMD - Display\\Directories\\AMD\\Support\\13-9_win7_win8_32_dd_ccc_whql\\Config\\",1,rrr,a);
-	list<char*>::iterator it;
-	for (it = a->begin(); it!=a->end(); ++it)
-	cout << *it << endl;
-	return 0;*/
+	HANDLE hMutex = OpenMutex(0,0,_T("BackUpOSRunAllowedOnce"));
+	if (hMutex==NULL)
+		hMutex = CreateMutex(0,0,_T("BackUpOSRunAllowedOnce"));
+	else
+		return 1;
+
 	GetCurrentDirectory(MAX_PATH, dir);
-	//cout << dir << endl;
 	if (argc ==1)
 	{
-		cout << _T("usage: backup.exe backup_folder [folder [types]]\n");
+
+		_tcout << _T("usage: backup.exe backup_folder [folder [types]]\n");
 		return 0;
 	}
 
@@ -65,9 +85,11 @@ int _tmain(int argc, TCHAR ** argv)
 	TCHAR ** srcv;	//	values of sources
 	TCHAR * dest;	//	destination
 	{
-		auto l = _tcslen(argv[1])+1;
+		auto l = _tcslen(argv[1])+2;
 		dest = new TCHAR[l];
 		_tcscpy_s(dest,l,argv[1]);
+		if (argv[1][l-3]!=_T('\\'))
+			_tcscat_s(dest,l,_T("\\"));
 	}
 	//	search extension
 	{
@@ -85,25 +107,27 @@ int _tmain(int argc, TCHAR ** argv)
 			extv = new TCHAR*[extc];
 			for (int i=0;i<extc;++i)
 			{
-				extv[i]= new TCHAR[_tcslen(argv[i+3])+1];
-				extv[i]= _tcscpy(extv[i],argv[i+3]);
+				int l =_tcslen(argv[i+3])+1;
+				extv[i]= new TCHAR[l];
+				_tcscpy_s(extv[i],l,argv[i+3]);
 			}
 		}
 	}
 
 	//	search sources
-	// TODO: add slashes at the ends of paths
 	{
 		if (3<=argc&&_tcscmp(argv[2],_T("*"))&&argv[2][0]!=_T('*'))
 		{
 			srcc = 1;
 			srcv = new TCHAR*[srcc];
-			srcv[0]= new TCHAR[_tcslen(argv[2])+1+1];
-			_tcscpy(srcv[0],argv[2]);
+			int l = _tcslen(argv[2])+1+1;
+			srcv[0]= new TCHAR[l];
+			_tcscpy_s(srcv[0],l,argv[2]);
+
 		}
 		else 
 		{
-			const int len = 128;
+			const int len = MAX_PATH;
 			TCHAR buf[len];
 			int count = GetLogicalDriveStrings(len,buf);
 			srcc =0 ;
@@ -118,7 +142,7 @@ int _tmain(int argc, TCHAR ** argv)
 					if(GetDriveType(buf+i)==DRIVE_FIXED||GetDriveType(buf+i)==DRIVE_REMOVABLE)
 					{
 						srcv[j] = new TCHAR[4];
-						_tcscpy(srcv[j],(buf+i));
+						_tcscpy_s(srcv[j],4,(buf+i));
 						++j;
 					}
 			}
@@ -127,8 +151,9 @@ int _tmain(int argc, TCHAR ** argv)
 				for (int i=0;i<count;i+=4)
 					if(GetDriveType(buf+i)==DRIVE_FIXED||GetDriveType(buf+i)==DRIVE_REMOVABLE)
 					{
-						srcv[j] = new TCHAR[_tcslen(argv[2])+1];
-						_tcscpy(srcv[j],argv[2]);
+						int l =_tcslen(argv[2])+2;
+						srcv[j] = new TCHAR[l];
+						_tcscpy_s(srcv[j],l,argv[2]);
 						srcv[j][0]= *(buf+i);
 						++j;
 					}
@@ -148,44 +173,23 @@ int _tmain(int argc, TCHAR ** argv)
 		strcpy(datetime,datetime2);
 #endif
 	}
-	/*
-	cout << _T("names of archives:") << endl;
-	for(int i=0;i<srcc;++i)
-	{
-	datetime[0] = srcv[i][0];
-	cout << datetime << endl;
-	}
-	cout <<"\n";
-
-	cout <<"list of used devices:\n";
-	for (int i=0;i<srcc;++i)
-	{
-
-	srcv[i][3]=0;	//!!!!!
-	cout << srcv[i] << endl;
-	}
-	cout << "\n";
-
-	cout <<"list of file extensions:\n";
-	for (int i=0;i<extc;++i)
-	cout << extv[i] << endl;*/
 
 	HANDLE *h = new HANDLE[srcc];
 	for (int i=0;i< srcc;++i)
 	{
 		fl *a = new fl();
 		_tcscpy(a->filename, datetime);
+		_tcscpy_s(a->dest,MAX_PATH,dest);
 		a->filename[0] = srcv[i][0];
 		a->path = srcv[i];
 		a->extv = extv;
 		a->extc = extc;
-		h[i] = CreateThread(0,0,saveFileList,a,0,0);
+		h[i] = CreateThread(0,0,StartBackup,a,0,0);
 	}
 	WaitForMultipleObjects(srcc,h,TRUE,INFINITE);
 	for (int i=0;i< srcc;++i)
 		CloseHandle(h[i]);
 	delete [] h;
-
 	//memfree
 	for (int i=0;i< extc;++i)
 		delete [] extv[i];
