@@ -82,6 +82,9 @@
   <ItemGroup>
     <ClInclude Include="filelist.h" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="Rar.exe" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

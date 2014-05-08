@@ -6,6 +6,7 @@
 #include <list>
 #include "filelist.h"
 using namespace std;
+
 #ifdef _UNICODE
 #define _tcout wcout
 #else
@@ -43,7 +44,7 @@ DWORD WINAPI StartBackup(PVOID arg2)
 	//TCHAR cmdLine2[MY_MAX_PATH];
 	//{
 	TCHAR cmdLine[MY_MAX_PATH];
-	_tcscpy_s(cmdLine, MY_MAX_PATH, _T("\"C:\\program files\\7-zip\\7z.exe\" a "));	//_T("\"%programfiles%\\7-zip\\7z.exe\" a "));
+	_tcscpy_s(cmdLine, MY_MAX_PATH, _T("\"Rar.exe\" a "));
 	_tcscat_s(cmdLine,MY_MAX_PATH,arg->dest);										//
 	_tcscat_s(cmdLine,MY_MAX_PATH,arg->filename);
 	_tcscat_s(cmdLine,MY_MAX_PATH,_T(" @\""));
@@ -55,8 +56,11 @@ DWORD WINAPI StartBackup(PVOID arg2)
 	//}
 	STARTUPINFO si = {sizeof(si)};
 	PROCESS_INFORMATION pi;
-	BOOL b = CreateProcess(NULL, cmdLine,NULL,NULL,FALSE,NULL,NULL,NULL,&si, &pi);
+	BOOL b = CreateProcess(NULL, cmdLine,NULL,NULL,FALSE,NULL,NULL,arg->path,&si, &pi);
 	WaitForSingleObject(pi.hThread,INFINITE);
+	for (it = a->begin(); it!=a->end(); ++it)
+		SetFileAttributes(*it,GetFileAttributes(*it)&(!FILE_ATTRIBUTE_ARCHIVE));
+	DeleteFile(outname);
 	delete a;
 	return 0;
 }
@@ -65,11 +69,15 @@ DWORD WINAPI StartBackup(PVOID arg2)
 
 int _tmain(int argc, TCHAR ** argv)
 {
-	HANDLE hMutex = OpenMutex(0,0,_T("BackUpOSRunAllowedOnce"));
+
+	HANDLE hMutex = OpenMutex(MUTEX_ALL_ACCESS,FALSE,_T("BackUpOSRunAllowedOnce_Skidanenko"));
 	if (hMutex==NULL)
-		hMutex = CreateMutex(0,0,_T("BackUpOSRunAllowedOnce"));
+		hMutex = CreateMutex(0,0,_T("BackUpOSRunAllowedOnce_Skidanenko"));
 	else
+	{
+		_tcout << "another istance of program running";
 		return 1;
+	}
 
 	GetCurrentDirectory(MAX_PATH, dir);
 	if (argc ==1)
@@ -187,8 +195,10 @@ int _tmain(int argc, TCHAR ** argv)
 		h[i] = CreateThread(0,0,StartBackup,a,0,0);
 	}
 	WaitForMultipleObjects(srcc,h,TRUE,INFINITE);
+	_tcout << _T("Disabling archive bit to added files...\n");
 	for (int i=0;i< srcc;++i)
 		CloseHandle(h[i]);
+	_tcout << _T("Deleting temporary data...\n");
 	delete [] h;
 	//memfree
 	for (int i=0;i< extc;++i)
